@@ -523,7 +523,7 @@ async function loadAuthCodes() {
     const data = await resp.json();
     ACCESS_CODES = data.codes || {};
   } catch(e) {
-    // 鍔犺浇澶辫触鐢ㄦ湰鍦板鐢?    ACCESS_CODES = { 'YTK888': { name: '绠＄悊鍛?, expire: '2099-12-31', enabled: true } };
+    ACCESS_CODES = { 'YTK888': { name: '绠＄悊鍛?, expire: '2099-12-31', enabled: true }, 'YTK666': { name: '鏉ㄦ潕閲?, expire: '2099-12-31', enabled: true }, 'LXX-2026-001': { name: '灏忔潕', expire: '2026-09-30', enabled: true }, 'LXX-2026-002': { name: '灏忕帇', expire: '2026-09-30', enabled: true } };
   }
 }
 
