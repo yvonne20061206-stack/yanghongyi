@@ -2687,25 +2687,8 @@ function exportExcel() {
 }
 </script>
 <script>
-// Service Worker
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').then(reg => {
-    reg.addEventListener('updatefound', () => {
-      const newSW = reg.installing;
-      newSW.addEventListener('statechange', () => {
-        if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
-          if (confirm('妫€娴嬪埌鏂扮増鏈紝绔嬪嵆鏇存柊锛?)) {
-            newSW.postMessage({ type: 'SKIP_WAITING' });
-            window.location.reload();
-          }
-        }
-      });
-    });
-  });
-}
-
 // 鐗堟湰妫€娴嬶紙姣?鍒嗛挓妫€鏌ヤ竴娆★級
-const APP_VERSION = 'v20260728-02';
+const APP_VERSION = 'v20260728-03';
 setInterval(() => {
   fetch('./version.json?t=' + Date.now())
     .then(r => r.json())
