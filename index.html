@@ -512,6 +512,16 @@ let CLEANED = [];
 let AUTH_USER = ''; // 褰撳墠璁块棶鑰?let MAPPING = {};
 let CURRENT_MONTH = '';
 
+// ==================== 宸ュ叿鍑芥暟 ====================
+// 鏈湴鏃堕棿鏍煎紡鍖?閬垮厤鏃跺尯bug: toISOString杞琔TC浼氬噺涓€澶?
+function fmtLocalDate(d) {
+  if (!(d instanceof Date)) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const da = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${da}`;
+}
+
 // ==================== 鎺堟潈闂?====================
 // 璁块棶鐮佷粠鏈嶅姟绔?auth.json 鍔犺浇
 let ACCESS_CODES = {};
@@ -523,7 +533,7 @@ async function loadAuthCodes() {
     const data = await resp.json();
     ACCESS_CODES = data.codes || {};
   } catch(e) {
-    ACCESS_CODES = { 'YTK888': { name: '绠＄悊鍛?, expire: '2099-12-31', enabled: true }, 'YTK666': { name: '鏉ㄦ潕閲?, expire: '2099-12-31', enabled: true }, 'LXX-2026-001': { name: '灏忔潕', expire: '2026-09-30', enabled: true }, 'LXX-2026-002': { name: '灏忕帇', expire: '2026-09-30', enabled: true } };
+    // 鍔犺浇澶辫触鐢ㄦ湰鍦板鐢?    ACCESS_CODES = { 'YTK888': { name: '绠＄悊鍛?, expire: '2099-12-31', enabled: true } };
   }
 }
 
@@ -924,7 +934,7 @@ function renderPreview() {
       <thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead>
       <tbody>${CLEANED.slice(0, 50).map(r => `<tr>${cols.map(c => {
         let v = r[c];
-        if (v instanceof Date) v = v.toISOString().slice(0, 10);
+        if (v instanceof Date) v = fmtLocalDate(v);
         return `<td>${v === undefined ? '' : v}</td>`;
       }).join('')}</tr>`).join('')}</tbody>
     </table>
@@ -1255,7 +1265,7 @@ function renderReport() {
   });
   // 鏃ヨ秼鍔?  const dailyMap = {};
   rows.forEach(r => {
-    const k = r['鏃ユ湡'].toISOString().slice(0, 10);
+    const k = fmtLocalDate(r['鏃ユ湡']);
     if (!dailyMap[k]) dailyMap[k] = { ss: 0, n: 0 };
     dailyMap[k].ss += r['瀹炴敹'];
     dailyMap[k].n += 1;
@@ -2363,7 +2373,7 @@ function exportExcel() {
   rows.forEach(r => {
     const row = [];
     fullCols.forEach(c => {
-      if (c === '鏃ユ湡') row.push(r['鏃ユ湡'] instanceof Date ? r['鏃ユ湡'].toISOString().slice(0,10) : '');
+      if (c === '鏃ユ湡') row.push(fmtLocalDate(r['鏃ユ湡']));
       else if (c === '_orphan') row.push(r._orphan ? '鏄? : '');
       else row.push(r[c] !== undefined ? r[c] : '');
     });
@@ -2479,7 +2489,7 @@ function exportExcel() {
   // ---------- Sheet 6: 鏃ヨ秼鍔?----------
   const dailyMap = {};
   rows.forEach(r => {
-    const k = r['鏃ユ湡'] instanceof Date ? r['鏃ユ湡'].toISOString().slice(0, 10) : '';
+    const k = fmtLocalDate(r['鏃ユ湡']);
     if (!k) return;
     if (!dailyMap[k]) dailyMap[k] = { ss: 0, n: 0 };
     dailyMap[k].ss += Number(r['瀹炴敹']) || 0;
