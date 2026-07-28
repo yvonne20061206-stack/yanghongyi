@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ytk-dashboard-v20260720-03';
+const CACHE_NAME = 'ytk-dashboard-v20260728';
 const urlsToCache = [
   './',
   './index.html',
@@ -26,8 +26,7 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
-  // auth.json 和 version.json 永远走网络，不缓存
-  if (url.pathname.endsWith('auth.json') || url.pathname.endsWith('version.json')) {
+  // auth.json 鍜?version.json 姘歌繙璧扮綉缁滐紝涓嶇紦瀛?  if (url.pathname.endsWith('auth.json') || url.pathname.endsWith('version.json')) {
     event.respondWith(fetch(event.request));
     return;
   }
