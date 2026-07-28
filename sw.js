@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ytk-dashboard-v20260728-b';
+const CACHE_NAME = 'ytk-dashboard-v20260728-c';
 const urlsToCache = [
   './',
   './index.html',
@@ -26,18 +26,16 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
-  // auth.json 鍜?version.json 姘歌繙璧扮綉缁滐紝涓嶇紦瀛?  if (url.pathname.endsWith('auth.json') || url.pathname.endsWith('version.json')) {
+  // auth.json / version.json 姘歌繙璧扮綉缁?  if (url.pathname.endsWith('auth.json') || url.pathname.endsWith('version.json')) {
     event.respondWith(fetch(event.request));
     return;
   }
-  // index.html 璧扮綉缁滀紭鍏堬紙淇濊瘉鐢ㄦ埛鎷垮埌鏈€鏂扮増锛?  if (url.pathname.endsWith('/') || url.pathname.endsWith('/index.html')) {
-    event.respondWith(fetch(event.request).then(r => {
-      const copy = r.clone();
-      caches.open(CACHE_NAME).then(c => c.put(event.request, copy));
-      return r;
-    }).catch(() => caches.match(event.request)));
+  // index.html / 鏍硅矾寰? 鍙蛋缃戠粶锛屼笉缂撳瓨(閬垮厤缂栫爜/鐗堟湰闂)
+  if (url.pathname.endsWith('/') || url.pathname.endsWith('/index.html')) {
+    event.respondWith(fetch(event.request, { cache: 'no-store' }));
     return;
   }
+  // 鍏朵粬闈欐€佽祫婧愮敤缂撳瓨浼樺厛
   event.respondWith(
     caches.match(event.request).then(resp => resp || fetch(event.request))
   );
