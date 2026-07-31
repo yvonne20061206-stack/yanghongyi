@@ -2832,6 +2832,73 @@ function exportExcel() {
     XLSX.utils.book_append_sheet(wb, ws7, '澶氭湀姹囨€?);
   }
 
+  // ---------- Sheet 8: 鍜ㄨ甯堜笟缁?----------
+  {
+    const rows8 = filterByMonth(CLEANED, CURRENT_MONTH);
+    const validRows8 = rows8.filter(r => !String(r['娌荤枟鏄庣粏'] || '').includes('鏇存崲鍖荤敓'));
+    const isDeal8 = r => {
+      if (r['鍒濆璇?] === '閫€璐?) return false;
+      const ss = Number(r['瀹炴敹'] || 0), ys = Number(r['搴旀敹'] || 0);
+      if ((ss === 0 || ss === 1) && (ys === 0 || ys === 1)) return false;
+      if (isNoDeal(r)) return false;
+      return true;
+    };
+    const isBig8 = r => BIG_PROJECTS.includes(r['椤圭洰']);
+    const isSmall8 = r => SMALL_PROJECTS.includes(r['椤圭洰']);
+
+    const groups8 = {};
+    validRows8.forEach(r => {
+      let name = String(r['鍜ㄨ甯?] || '').trim() || '鏈垎閰?;
+      if (!groups8[name]) groups8[name] = [];
+      groups8[name].push(r);
+    });
+
+    function calcC8(sub) {
+      const yjRows = sub.filter(r => ['鍒濊瘖','澶嶈瘖','鍐嶆秷璐?].includes(r['鍒濆璇?]));
+      const yj = yjRows.reduce((a, r) => a + (Number(r['瀹炴敹']) || 0), 0);
+      const yjCz = sub.filter(r => r['鍒濆璇?] === '鍒濊瘖').reduce((a, r) => a + (Number(r['瀹炴敹']) || 0), 0);
+      const yjFz = sub.filter(r => r['鍒濆璇?] === '澶嶈瘖').reduce((a, r) => a + (Number(r['瀹炴敹']) || 0), 0);
+      const yjZxf = sub.filter(r => r['鍒濆璇?] === '鍐嶆秷璐?).reduce((a, r) => a + (Number(r['瀹炴敹']) || 0), 0);
+      const yjBig = yjRows.filter(isBig8).reduce((a, r) => a + (Number(r['瀹炴敹']) || 0), 0);
+      const yjSmall = yjRows.filter(isSmall8).reduce((a, r) => a + (Number(r['瀹炴敹']) || 0), 0);
+      const czFz = sub.filter(r => ['鍒濊瘖','澶嶈瘖'].includes(r['鍒濆璇?]) && !r._orphan);
+      const nCz = czFz.filter(r => r['鍒濆璇?] === '鍒濊瘖').length;
+      const nFz = czFz.filter(r => r['鍒濆璇?] === '澶嶈瘖').length;
+      const nDealCz = czFz.filter(r => r['鍒濆璇?] === '鍒濊瘖' && isDeal8(r)).length;
+      const nDealFz = czFz.filter(r => r['鍒濆璇?] === '澶嶈瘖' && isDeal8(r)).length;
+      const ss = sub.reduce((a, r) => a + (Number(r['瀹炴敹']) || 0), 0);
+      const sq = sub.filter(r => Number(r['搴旀敹']) === 0 && Number(r['瀹炴敹']) > 0 && r['鍒濆璇?] === '澶嶆煡').reduce((a, r) => a + (Number(r['瀹炴敹']) || 0), 0);
+      const tf = Math.abs(sub.filter(r => r['鍒濆璇?] === '閫€璐?).reduce((a, r) => a + (Number(r['瀹炴敹']) || 0), 0));
+      return { yj, yjCz, yjFz, yjZxf, yjBig, yjSmall, nCz, nFz, nDealCz, nDealFz, ss, sq, tf };
+    }
+
+    const totalYj8 = validRows8.filter(r => ['鍒濊瘖','澶嶈瘖','鍐嶆秷璐?].includes(r['鍒濆璇?])).reduce((a, r) => a + (Number(r['瀹炴敹']) || 0), 0);
+    const dataList8 = Object.keys(groups8).map(name => {
+      const d = calcC8(groups8[name]);
+      return { name, ...d, pct: totalYj8 > 0 ? d.yj / totalYj8 : 0 };
+    }).sort((a, b) => b.yj - a.yj);
+    const grand8 = calcC8(validRows8);
+
+    const cols8 = ['鍜ㄨ甯?,'涓氱哗鍗犳瘮','鍒濊瘖涓氱哗','澶嶈瘖涓氱哗','鍐嶆秷璐逛笟缁?,'澶ч」鐩笟缁?,'闈炲ぇ椤逛笟缁?,'鍒濊瘖鍒伴櫌','鍒濊瘖鎴愪氦','鍒濊瘖鎴愪氦鐜?,'澶嶈瘖鍒伴櫌','澶嶈瘖鎴愪氦','澶嶈瘖鎴愪氦鐜?,'瀹炴敹','鏀舵瑺璐?,'閫€璐?];
+    const aoa8 = [[titleStr + ' - 鍜ㄨ甯堜笟缁?], [], cols8];
+    dataList8.forEach(d => {
+      aoa8.push([d.name, d.pct, d.yjCz, d.yjFz, d.yjZxf, d.yjBig, d.yjSmall, d.nCz, d.nDealCz, d.nCz > 0 ? d.nDealCz/d.nCz : 0, d.nFz, d.nDealFz, d.nFz > 0 ? d.nDealFz/d.nFz : 0, d.ss, d.sq, d.tf]);
+    });
+    aoa8.push(['鍚堣', 1, grand8.yjCz, grand8.yjFz, grand8.yjZxf, grand8.yjBig, grand8.yjSmall, grand8.nCz, grand8.nDealCz, grand8.nCz > 0 ? grand8.nDealCz/grand8.nCz : 0, grand8.nFz, grand8.nDealFz, grand8.nFz > 0 ? grand8.nDealFz/grand8.nFz : 0, grand8.ss, grand8.sq, grand8.tf]);
+
+    const ws8 = XLSX.utils.aoa_to_sheet(aoa8);
+    ws8['!cols'] = cols8.map(() => ({ wch: 12 }));
+    ws8['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: cols8.length - 1 } }];
+    const fmt8 = ['text','pct','amt','amt','amt','amt','amt','int','int','pct','int','int','pct','amt','amt','amt'];
+    styleRowFmt(ws8, 0, cols8.length, XLSX_STYLE.title, null, null, null, null);
+    styleRowFmt(ws8, 1, cols8.length, XLSX_STYLE.header, null, fmt8, null, null);
+    for (let r = 2; r < aoa8.length; r++) {
+      const isTotal = r === aoa8.length - 1;
+      styleRowFmt(ws8, r, cols8.length, isTotal ? XLSX_STYLE.total : XLSX_STYLE.cellL, null, fmt8, null, null);
+    }
+    XLSX.utils.book_append_sheet(wb, ws8, '鍜ㄨ甯堜笟缁?);
+  }
+
   // 鏂囦欢鍚? 濡傛灉鏈夊鏈堟暟鎹?鐢ㄦ棩鏈熻寖鍥? 鍚﹀垯鐢ㄥ綋鍓嶆湀
   const allMonthsExp = getMonths().sort();
   let fileName;
