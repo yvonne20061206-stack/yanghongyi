@@ -356,6 +356,7 @@
       <div class="tab" data-tab="channel">馃摗 娓犻亾鏁版嵁</div>
       <div class="tab" data-tab="audit">馃攳 瀹℃牳鎶ュ憡</div>
       <div class="tab" data-tab="semiannual">馃搱 澶氭湀姹囨€?/div>
+      <div class="tab" data-tab="consultant">馃幆 鍜ㄨ甯堜笟缁?/div>
     </div>
 
     <!-- Tab1: 缁忚惀鎶ヨ〃 -->
@@ -458,6 +459,12 @@
     <div id="tabSemiAnnual" class="tab-content">
       <div class="watermark" id="watermarkSemi"></div>
       <div id="semiAnnualReport"></div>
+    </div>
+
+    <!-- Tab5: 鍜ㄨ甯堜笟缁?-->
+    <div id="tabConsultant" class="tab-content">
+      <div class="watermark" id="watermarkConsultant"></div>
+      <div id="consultantReport"></div>
     </div>
   </div>
 
@@ -625,6 +632,8 @@ function applyWatermark(elemId) {
 applyWatermark('watermarkReport');
 applyWatermark('watermarkAudit');
 applyWatermark('watermarkSemi');
+applyWatermark('watermarkChannel');
+applyWatermark('watermarkConsultant');
 
 // ==================== UI 浜嬩欢 ====================
 const dropZone = document.getElementById('dropZone');
@@ -657,11 +666,12 @@ document.querySelectorAll('.tab').forEach(t => {
     document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
     t.classList.add('active');
     const tab = t.dataset.tab;
-    const tabMap = { report: 'tabReport', channel: 'tabChannel', audit: 'tabAudit', semiannual: 'tabSemiAnnual' };
+    const tabMap = { report: 'tabReport', channel: 'tabChannel', audit: 'tabAudit', semiannual: 'tabSemiAnnual', consultant: 'tabConsultant' };
     document.getElementById(tabMap[tab]).classList.add('active');
     if (tab === 'audit') renderAuditReport();
     if (tab === 'channel') renderChannelReport();
     if (tab === 'semiannual') renderSemiAnnualReport();
+    if (tab === 'consultant') renderConsultantReport();
   });
 });
 document.getElementById('monthSelect').addEventListener('change', e => {
@@ -1523,6 +1533,161 @@ function channelHTML(rows) {
   </tr>`;
 
   html += `</table></div>`;
+  return html;
+}
+
+// ==================== 鍜ㄨ甯堜笟缁?====================
+function renderConsultantReport() {
+  if (!CURRENT_MONTH) initMonthSelect();
+  const rows = filterByMonth(CLEANED, CURRENT_MONTH);
+  if (rows.length === 0) {
+    document.getElementById('consultantReport').innerHTML = '<div class="empty-state">璇ユ湀浠芥棤鏁版嵁</div>';
+    return;
+  }
+  document.getElementById('consultantReport').innerHTML = consultantHTML(rows);
+}
+
+function consultantHTML(rows) {
+  const validRows = rows.filter(r => !String(r['娌荤枟鏄庣粏'] || '').includes('鏇存崲鍖荤敓'));
+  // 鎴愪氦鍒ゅ畾(鍚屾笭閬撴暟鎹€昏緫)
+  const isDeal = r => {
+    if (r['鍒濆璇?] === '閫€璐?) return false;
+    const ss = Number(r['瀹炴敹'] || 0);
+    const ys = Number(r['搴旀敹'] || 0);
+    if ((ss === 0 || ss === 1) && (ys === 0 || ys === 1)) return false;
+    if (isNoDeal(r)) return false;
+    return true;
+  };
+  const isBig = r => BIG_PROJECTS.includes(r['椤圭洰']);
+  const isSmall = r => SMALL_PROJECTS.includes(r['椤圭洰']);
+
+  // 鎸夊挩璇㈠笀鍒嗙粍(绌哄挩璇㈠笀褰掑叆"鏈垎閰?)
+  const groups = {};
+  validRows.forEach(r => {
+    let name = String(r['鍜ㄨ甯?] || '').trim();
+    if (!name) name = '鏈垎閰?;
+    if (!groups[name]) groups[name] = [];
+    groups[name].push(r);
+  });
+
+  // 璁＄畻姣忎綅鍜ㄨ甯堟寚鏍?  function calcConsultant(sub) {
+    // 涓氱哗 = 鍒濊瘖+澶嶈瘖+鍐嶆秷璐圭殑瀹炴敹
+    const yjRows = sub.filter(r => ['鍒濊瘖','澶嶈瘖','鍐嶆秷璐?].includes(r['鍒濆璇?]));
+    const yj = yjRows.reduce((a, r) => a + (Number(r['瀹炴敹']) || 0), 0);
+    // 鍒嗙被涓氱哗
+    const yjCz = sub.filter(r => r['鍒濆璇?] === '鍒濊瘖').reduce((a, r) => a + (Number(r['瀹炴敹']) || 0), 0);
+    const yjFz = sub.filter(r => r['鍒濆璇?] === '澶嶈瘖').reduce((a, r) => a + (Number(r['瀹炴敹']) || 0), 0);
+    const yjZxf = sub.filter(r => r['鍒濆璇?] === '鍐嶆秷璐?).reduce((a, r) => a + (Number(r['瀹炴敹']) || 0), 0);
+    // 澶ч」鐩?闈炲ぇ椤圭洰涓氱哗
+    const yjBig = yjRows.filter(isBig).reduce((a, r) => a + (Number(r['瀹炴敹']) || 0), 0);
+    const yjSmall = yjRows.filter(isSmall).reduce((a, r) => a + (Number(r['瀹炴敹']) || 0), 0);
+    // 鍒伴櫌浜烘暟(鍒濊瘖+澶嶈瘖, 鎺掗櫎瀛ょ珛琛?
+    const czFz = sub.filter(r => ['鍒濊瘖','澶嶈瘖'].includes(r['鍒濆璇?]) && !r._orphan);
+    const nCz = czFz.filter(r => r['鍒濆璇?] === '鍒濊瘖').length;
+    const nFz = czFz.filter(r => r['鍒濆璇?] === '澶嶈瘖').length;
+    // 鎴愪氦浜烘暟
+    const nDealCz = czFz.filter(r => r['鍒濆璇?] === '鍒濊瘖' && isDeal(r)).length;
+    const nDealFz = czFz.filter(r => r['鍒濆璇?] === '澶嶈瘖' && isDeal(r)).length;
+    const rateCz = nCz > 0 ? nDealCz / nCz : 0;
+    const rateFz = nFz > 0 ? nDealFz / nFz : 0;
+    // 瀹炴敹/鏀舵瑺璐?閫€璐?    const ss = sub.reduce((a, r) => a + (Number(r['瀹炴敹']) || 0), 0);
+    const sq = sub.filter(r => Number(r['搴旀敹']) === 0 && Number(r['瀹炴敹']) > 0 && r['鍒濆璇?] === '澶嶆煡').reduce((a, r) => a + (Number(r['瀹炴敹']) || 0), 0);
+    const tf = Math.abs(sub.filter(r => r['鍒濆璇?] === '閫€璐?).reduce((a, r) => a + (Number(r['瀹炴敹']) || 0), 0));
+    return { yj, yjCz, yjFz, yjZxf, yjBig, yjSmall, nCz, nFz, nDealCz, nDealFz, rateCz, rateFz, ss, sq, tf };
+  }
+
+  const totalYj = validRows.filter(r => ['鍒濊瘖','澶嶈瘖','鍐嶆秷璐?].includes(r['鍒濆璇?])).reduce((a, r) => a + (Number(r['瀹炴敹']) || 0), 0);
+
+  const dataList = Object.keys(groups).map(name => {
+    const d = calcConsultant(groups[name]);
+    return { name, ...d, pct: totalYj > 0 ? d.yj / totalYj : 0 };
+  }).sort((a, b) => b.yj - a.yj);
+
+  const grandTotal = calcConsultant(validRows);
+
+  const fmt = n => Number(n || 0).toLocaleString('zh-CN', { maximumFractionDigits: 0 });
+  const pct = p => (p * 100).toFixed(1) + '%';
+
+  let html = `<div class="audit-section">
+    <h2>馃幆 鍜ㄨ甯堜笟缁╋紙${CURRENT_MONTH}锛?/h2>
+    <table class="tmpl-table">
+      <tr><td class="tmpl-title" colspan="14">鍜ㄨ甯堜笟缁╂槑缁?/td></tr>
+      <tr class="row-header">
+        <td rowspan="2">鍜ㄨ甯?/td><td rowspan="2">涓氱哗鍗犳瘮</td>
+        <td colspan="3">涓氱哗鏄庣粏</td>
+        <td colspan="2">椤圭洰鍒嗙被</td>
+        <td colspan="2">鍒濊瘖</td><td colspan="2">澶嶈瘖</td>
+        <td rowspan="2">瀹炴敹</td><td rowspan="2">鏀舵瑺璐?/td><td rowspan="2" class="text-red">閫€璐?/td>
+      </tr>
+      <tr class="row-header">
+        <td>鍒濊瘖</td><td>澶嶈瘖</td><td>鍐嶆秷璐?/td>
+        <td>澶ч」鐩?/td><td>闈炲ぇ椤?/td>
+        <td>鍒伴櫌/鎴愪氦</td><td>鎴愪氦鐜?/td>
+        <td>鍒伴櫌/鎴愪氦</td><td>鎴愪氦鐜?/td>
+      </tr>`;
+
+  dataList.forEach(d => {
+    html += `<tr>
+      <td class="text-bold">${d.name}</td>
+      <td>${pct(d.pct)}</td>
+      <td>${fmt(d.yjCz)}</td><td>${fmt(d.yjFz)}</td><td>${fmt(d.yjZxf)}</td>
+      <td>${fmt(d.yjBig)}</td><td>${fmt(d.yjSmall)}</td>
+      <td>${d.nCz}/${d.nDealCz}</td><td>${pct(d.rateCz)}</td>
+      <td>${d.nFz}/${d.nDealFz}</td><td>${pct(d.rateFz)}</td>
+      <td>${fmt(d.ss)}</td><td>${fmt(d.sq)}</td><td class="text-red">${fmt(d.tf)}</td>
+    </tr>`;
+  });
+
+  // 鍚堣琛?  html += `<tr class="row-total">
+    <td>鍚堣</td>
+    <td>100.0%</td>
+    <td>${fmt(grandTotal.yjCz)}</td><td>${fmt(grandTotal.yjFz)}</td><td>${fmt(grandTotal.yjZxf)}</td>
+    <td>${fmt(grandTotal.yjBig)}</td><td>${fmt(grandTotal.yjSmall)}</td>
+    <td>${grandTotal.nCz}/${grandTotal.nDealCz}</td><td>${pct(grandTotal.rateCz)}</td>
+    <td>${grandTotal.nFz}/${grandTotal.nDealFz}</td><td>${pct(grandTotal.rateFz)}</td>
+    <td>${fmt(grandTotal.ss)}</td><td>${fmt(grandTotal.sq)}</td><td class="text-red">${fmt(grandTotal.tf)}</td>
+  </tr>`;
+
+  html += `</table></div>`;
+
+  // 涓氱哗鍗犳瘮楗煎浘
+  const chartId = 'consultantChart';
+  html += `<div class="audit-section">
+    <h2>馃ェ 鍜ㄨ甯堜笟缁╁崰姣?/h2>
+    <canvas id="${chartId}" style="max-height:400px;"></canvas>
+  </div>`;
+
+  // 寤惰繜娓叉煋鍥捐〃
+  setTimeout(() => {
+    const ctx = document.getElementById(chartId);
+    if (!ctx) return;
+    const top = dataList.filter(d => d.yj > 0).slice(0, 10);
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: top.map(d => d.name),
+        datasets: [{
+          data: top.map(d => d.yj),
+          backgroundColor: ['#4472C4','#ED7D31','#A5A5A5','#FFC000','#5B9BD5','#70AD47','#264478','#9E480E','#636363','#997300'],
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'right' },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const d = top[ctx.dataIndex];
+                return `${d.name}: ${fmt(d.yj)}鍏?(${pct(d.pct)})`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }, 100);
+
   return html;
 }
 
